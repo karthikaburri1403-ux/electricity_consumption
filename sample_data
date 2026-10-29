@@ -1,0 +1,44 @@
+USE electricity_db;
+
+-- 1. Consumers (C001 may already exist from your test, which is fine)
+INSERT IGNORE INTO consumers (consumer_code, consumer_type, region) VALUES
+ ('C001', 'Residential', 'North'),
+ ('C002', 'Commercial',  'South'),
+ ('C003', 'Residential', 'East');
+
+-- 2. Meters (linked to consumers by code)
+INSERT IGNORE INTO meters (consumer_id, meter_code)
+SELECT consumer_id, 'M001' FROM consumers WHERE consumer_code = 'C001';
+INSERT IGNORE INTO meters (consumer_id, meter_code)
+SELECT consumer_id, 'M002' FROM consumers WHERE consumer_code = 'C002';
+INSERT IGNORE INTO meters (consumer_id, meter_code)
+SELECT consumer_id, 'M003' FROM consumers WHERE consumer_code = 'C003';
+
+-- 3. Look up the meter ids (they may not be 1, 2, 3)
+SET @m1 = (SELECT meter_id FROM meters WHERE meter_code = 'M001');
+SET @m2 = (SELECT meter_id FROM meters WHERE meter_code = 'M002');
+SET @m3 = (SELECT meter_id FROM meters WHERE meter_code = 'M003');
+
+-- 4. Readings: 6 per meter (cumulative kWh)
+INSERT IGNORE INTO meter_readings (meter_id, reading_date, cumulative_kwh) VALUES
+ -- M001: normal usage
+ (@m1, '2026-01-01', 1000.00),
+ (@m1, '2026-02-01', 1150.00),
+ (@m1, '2026-03-01', 1290.00),
+ (@m1, '2026-04-01', 1445.00),
+ (@m1, '2026-05-01', 1590.00),
+ (@m1, '2026-06-01', 1760.00),
+ -- M002: usage spike in May
+ (@m2, '2026-01-01', 5000.00),
+ (@m2, '2026-02-01', 5800.00),
+ (@m2, '2026-03-01', 6650.00),
+ (@m2, '2026-04-01', 7500.00),
+ (@m2, '2026-05-01', 9200.00),
+ (@m2, '2026-06-01', 10050.00),
+ -- M003: meter reset in April (value drops from 2250 to 30)
+ (@m3, '2026-01-01', 2000.00),
+ (@m3, '2026-02-01', 2120.00),
+ (@m3, '2026-03-01', 2250.00),
+ (@m3, '2026-04-01', 30.00),
+ (@m3, '2026-05-01', 150.00),
+ (@m3, '2026-06-01', 270.00);
